@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cadastro de Pessoas</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div class="card">
+    <h1>Cadastro de Pessoas</h1>
+
+    <div class="row">
+      <div>
+        <label for="id">ID (para atualizar/excluir)</label>
+        <input id="id" type="number" placeholder="Ex.: 1"/>
+      </div>
+      <div></div>
+    </div>
+
+    <label for="nome">Nome</label>
+    <input id="nome" type="text" placeholder="Nome completo"/>
+
+    <label for="cpf">CPF (apenas números)</label>
+    <input id="cpf" type="text" placeholder="Ex.: 12345678901"/>
+
+    <label for="telefone">Telefone</label>
+    <input id="telefone" type="text" placeholder="Ex.: (11) 90000-0000"/>
+
+    <div class="actions">
+      <button class="primary" onclick="createPessoa()">Criar</button>
+      <button onclick="listar()">Listar</button>
+      <button onclick="buscarPorId()">Buscar por ID</button>
+      <button class="primary" onclick="atualizar()">Atualizar</button>
+      <button class="warn" onclick="excluir()">Excluir</button>
+      <button onclick="limpar()">Limpar</button>
+    </div>
+
+    <div id="msg" class="msg"></div>
+
+    <table id="tabela">
+      <thead>
+        <tr><th>ID</th><th>Nome</th><th>CPF</th><th>Telefone</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+<script>
+const API = 'controlePessoa.php';
+
+function showMsg(ok, text){
+  const el = document.getElementById('msg');
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+  el.textContent = text;
+  el.style.display = 'block';
+}
+
+function limpar(){
+  document.getElementById('id').value = '';
+  document.getElementById('nome').value = '';
+  document.getElementById('cpf').value = '';
+  document.getElementById('telefone').value = '';
+  document.querySelector('#tabela tbody').innerHTML='';
+  document.getElementById('msg').style.display='none';
+}
+
+async function createPessoa(){
+  const nome = document.getElementById('nome').value.trim();
+  const cpf = document.getElementById('cpf').value.trim();
+  const telefone = document.getElementById('telefone').value.trim();
+  const res = await fetch(API + '?op=create', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({nome, cpf, telefone})
+  });
+  const j = await res.json();
+  showMsg(j.success, j.message);
+  if (j.success) listar();
+}
+
+async function listar(){
+  const res = await fetch(API + '?op=read');
+  const j = await res.json();
+  if (!j.success){ showMsg(false, j.message); return; }
+  const tbody = document.querySelector('#tabela tbody');
+  tbody.innerHTML = '';
+  j.data.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.id}</td><td>${r.nome}</td><td>${r.cpf}</td><td>${r.telefone}</td>`;
+    tr.onclick = () => {
+      document.getElementById('id').value = r.id;
+      document.getElementById('nome').value = r.nome;
+      document.getElementById('cpf').value = r.cpf;
+      document.getElementById('telefone').value = r.telefone;
+    };
+    tbody.appendChild(tr);
+  });
+  showMsg(true, j.message + ` (Total: ${j.data.length})`);
+}
+
+async function buscarPorId(){
+  const id = document.getElementById('id').value.trim();
+  if (!id) { showMsg(false, 'Informe um ID.'); return; }
+  const res = await fetch(API + '?op=read&id=' + encodeURIComponent(id));
+  const j = await res.json();
+  if (!j.success){ showMsg(false, j.message); return; }
+  const tbody = document.querySelector('#tabela tbody');
+  tbody.innerHTML = '';
+  if (j.data.length === 0){
+    showMsg(true, 'Nenhum registro encontrado.');
+    return;
+  }
+  const r = j.data[0];
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${r.id}</td><td>${r.nome}</td><td>${r.cpf}</td><td>${r.telefone}</td>`;
+  tbody.appendChild(tr);
+  document.getElementById('nome').value = r.nome;
+  document.getElementById('cpf').value = r.cpf;
+  document.getElementById('telefone').value = r.telefone;
+  showMsg(true, 'Registro carregado.');
+}
+
+async function atualizar(){
+  const id = document.getElementById('id').value.trim();
+  const nome = document.getElementById('nome').value.trim();
+  const cpf = document.getElementById('cpf').value.trim();
+  const telefone = document.getElementById('telefone').value.trim();
+  const res = await fetch(API + '?op=update', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({id, nome, cpf, telefone})
+  });
+  const j = await res.json();
+  showMsg(j.success, j.message);
+  if (j.success) listar();
+}
+
+async function excluir(){
+  const id = document.getElementById('id').value.trim();
+  if (!id){ showMsg(false, 'Informe um ID para excluir.'); return; }
+  const res = await fetch(API + '?op=delete', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({id})
+  });
+  const j = await res.json();
+  showMsg(j.success, j.message);
+  if (j.success) listar();
+}
+</script>
+</body>
+</html>
