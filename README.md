@@ -4,4 +4,4 @@
 
 -inicie o xamp
 
--entre em http://localhost/api/form.html
+-entre em http://localhost/phpapi-main/phpapi-main/form.html
