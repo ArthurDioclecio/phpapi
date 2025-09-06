@@ -1,4 +1,4 @@
-CREATE DATABASE pessoa
+CREATE DATABASE pessoa;
 USE pessoa;
 
 CREATE TABLE pessoa (
